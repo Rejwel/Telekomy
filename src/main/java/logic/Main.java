@@ -1,34 +1,52 @@
 package logic;
 
-import java.util.Arrays;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Scanner;
+
+import static java.lang.System.exit;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         Transmission T = new Transmission();
+        Scanner in = new Scanner(System.in);
+        InputStream inputStream = new FileInputStream("src/main/resources/plik.txt");
 
-        int[] code = {0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0};
-//        int[] encodedCode = T.encodeCharacter(code);
-
-        var errorTable = T.getErrorTable(code);
-
-        // check if program has no errors
-        if (T.isCorrect(errorTable)) {
-            System.out.println("There is no errors");
+        while(true) {
+            System.out.println("Choose option:");
+            System.out.println("1. Encode bits to clear bits from file");
+            System.out.println("2. Encode bits to normal bytes from file");
+            System.out.println("3. Repair bits from clear bits and create decoded file");
+            System.out.println("0. Exit");
+            char opt = in.next().charAt(0);
+            switch (opt) {
+                case '1' -> {
+                    System.out.println("Processing...");
+                    byte[] bytes = inputStream.readAllBytes();
+                    int[][] bits = T.decodeAllBytes(bytes);
+                    T.saveToClearBits(bits);
+                    System.out.println("Done!");
+                    System.out.println();
+                }
+                case '2' -> {
+                    System.out.println("Processing...");
+                    byte[] bytes = inputStream.readAllBytes();
+                    int[][] bits = T.decodeAllBytes(bytes);
+                    T.saveToEncodedBytes(bits);
+                    System.out.println("Done!");
+                    System.out.println();
+                }
+                case '3' -> {
+                    System.out.println("Processing...");
+                    int[][] bits = T.readFromClearBits();
+                    T.repairAndSaveToFile(bits);
+                    System.out.println("Done!");
+                    System.out.println();
+                }
+                case '0' -> exit(0);
+            }
         }
-        // check if program has one error
-        else if(T.getErrorHCol(errorTable) != -1) {
-            System.out.println("Error is on " + T.getErrorHCol(errorTable) + " bit");
-        }
-        // check if program has 2 errors
-        else if(!Arrays.equals(T.getAddedErrorHCols(errorTable), new int[]{0, 0})) {
-            System.out.println("Error is on " + T.getAddedErrorHCols(errorTable)[0] + " and " + T.getAddedErrorHCols(errorTable)[1] +  " bit");
-        }
-        // there is more errors or given code is not valid
-        else{
-            System.out.println("There is more than 2 errors or given code is not valid");
-        }
-
-        System.out.println("stop");
     }
 }
