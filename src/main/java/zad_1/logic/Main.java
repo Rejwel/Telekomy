@@ -1,4 +1,4 @@
-package logic;
+package zad_1.logic;
 
 import java.io.FileInputStream;
 import java.io.IOException;
