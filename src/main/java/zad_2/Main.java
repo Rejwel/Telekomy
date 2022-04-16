@@ -1,7 +1,7 @@
 package zad_2;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Scanner;
@@ -10,7 +10,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Scanner s = new Scanner(System.in);
 
-        InputStream inputStream = new FileInputStream("src/main/resources/cos.jpeg");
+        InputStream inputStream = new FileInputStream("src/main/resources/cos.bmp");
         byte[] bytes = inputStream.readAllBytes();
         System.out.println(bytes.length);
         int kindOfPort;

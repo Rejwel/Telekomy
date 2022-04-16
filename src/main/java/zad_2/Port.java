@@ -18,8 +18,8 @@ public class Port implements AutoCloseable {
     private byte[] lastMessage = {'0'};
     private byte[][] messageToSend;
     private List<Byte> deliveredMessage = new ArrayList<>();
-    private int numerOfBlockToSend = 0;
-    private boolean start = true;
+    private int numerOfBlockToSend = -1;
+    private int counter = 0;
     private boolean shouldContinue = true;
     private byte[] lastSendMessage = new byte[2];
 
@@ -57,78 +57,72 @@ public class Port implements AutoCloseable {
         return lastMessage;
     }
 
-    private void whatToDoSenderSwitch() throws InterruptedException {
+    public void sendAConfirmConnectMessage() {
+        long start = 0;
         while (true) {
-            while (true) {
-                System.out.println(lastMessage.toString());
-                if (Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
-                    break;
-                }
-            }
+            port.writeBytes(new byte[]{'9', '9'}, 2);
+        }
+    }
 
-            lastMessageReaded = true;
-            while (true) {
-                if (!Arrays.equals(lastMessage, new byte[]{'0'}) && Arrays.equals(new byte[]{lastMessage[lastMessage.length - 2], lastMessage[lastMessage.length - 1]}, new byte[]{'8', '8'}) && !lastMessageReaded) {
-                    lastMessageReaded = false;
-                    lastMessage = new byte[]{'1', '1'};
-                    break;
-                }
-                port.writeBytes(new byte[]{'9', '9'}, 2);
-                TimeUnit.SECONDS.sleep(3);
-            }
+    private void whatToDoSenderSwitch() throws InterruptedException {
 
-            while (true) {
+        while (true) {
+            if (Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
                 System.out.println("dupa");
-                if (!lastMessageReaded && (Arrays.equals(lastMessage, new byte[]{'0', '2'}) || Arrays.equals(lastMessage, new byte[]{'1', '1'}))) {
-                    lastMessageReaded = true;
-                    byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]);
-                    if (messageToSend.length == 1 && shouldContinue) {
-                        port.writeBytes(combine, combine.length);
-                        shouldContinue = false;
-                        continue;
+                long start = System.currentTimeMillis();
+                while (!Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
+                    if (System.currentTimeMillis() - start > 2000) {
+                        start = System.currentTimeMillis();
+                        port.writeBytes(new byte[]{'9', '9'}, 2);
                     }
-
-                    if (numerOfBlockToSend == messageToSend.length - 1 && Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
-                        port.writeBytes(new byte[]{'f', 'f'}, 2);
-                        break;
-                    }
-
-
-                    if (Arrays.equals(lastMessage, new byte[]{'0', '2'}) || start) {
-                        port.writeBytes(combine, combine.length);
-                        start = false;
-                    } else if (Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
-                        numerOfBlockToSend++;
-                        port.writeBytes(combine, combine.length);
-                    }
-
                 }
 
+                while (true) {
+                    if (!lastMessageReaded && (Arrays.equals(lastMessage, new byte[]{'0', '2'}) || Arrays.equals(lastMessage, new byte[]{'1', '1'}))) {
+                        lastMessageReaded = true;
+
+
+                        if (counter == messageToSend.length && Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
+                            port.writeBytes(new byte[]{'f', 'f'}, 2);
+                            break;
+                        }
+
+                        if (Arrays.equals(lastMessage, new byte[]{'0', '2'})) {
+                            port.writeBytes(lastSendMessage, lastSendMessage.length);
+                        }
+
+                        if (Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
+                            numerOfBlockToSend++;
+                            byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]);
+                            lastSendMessage = combine;
+                            port.writeBytes(combine, combine.length);
+                            counter++;
+                        }
+                    }
+                    Thread.sleep(10);
+                }
+                break;
             }
-            break;
+            Thread.sleep(1000);
         }
     }
 
     private void whatToDoReceiverSwitch() throws IOException, InterruptedException {
-        while (true) {
-            if (Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
-                break;
+        long start = System.currentTimeMillis();
+        while (!Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
+            if (System.currentTimeMillis() - start > 5000) {
+                start = System.currentTimeMillis();
+                port.writeBytes(new byte[]{'9', '9'}, 2);
+                System.out.println(lastMessage);
             }
-            port.writeBytes(new byte[]{'9', '9'}, 2);
-            TimeUnit.SECONDS.sleep(3);
-            System.out.println(lastMessage.toString());
         }
 
-        TimeUnit.SECONDS.sleep(3);
-        port.writeBytes(new byte[]{'8', '8'}, 2);
-        lastSendMessage = new byte[]{'8', '8'};
-        TimeUnit.SECONDS.sleep(2);
-
-        long start = 0;
+        port.writeBytes(new byte[]{'1', '1'}, 2);
+        lastSendMessage = new byte[]{'1', '1'};
 
 
         while (true) {
-            if (System.currentTimeMillis() - start > 150) {
+            if (System.currentTimeMillis() - start > 500) {
                 port.writeBytes(lastSendMessage, 2);
                 start = System.currentTimeMillis();
             }
@@ -152,7 +146,8 @@ public class Port implements AutoCloseable {
                 }
             }
         }
-        FileOutputStream fo = new FileOutputStream("src/main/resources/wynik.bin");
+        FileOutputStream fo = new FileOutputStream("src/main/resources/cos.bmp");
+        System.out.println(deliveredMessage.size());
         fo.write(fromListToArray(deliveredMessage));
         fo.close();
     }

@@ -21,7 +21,9 @@ public class Data {
             converted[converted.length - 1][counter] = 0;
             counter++;
         }
+        System.out.println(converted.length);
         return converted;
+
     }
 
     public static byte[] countCheckSum(byte[] bytes) {
