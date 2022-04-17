@@ -93,13 +93,14 @@ public class Port implements AutoCloseable {
 
                         if (Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
                             numerOfBlockToSend++;
+                            System.out.println(numerOfBlockToSend);
                             byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]);
                             lastSendMessage = combine;
                             port.writeBytes(combine, combine.length);
                             counter++;
                         }
                     }
-                    Thread.sleep(10);
+                    Thread.sleep(20);
                 }
                 break;
             }
@@ -146,7 +147,9 @@ public class Port implements AutoCloseable {
                 }
             }
         }
-        FileOutputStream fo = new FileOutputStream("src/main/resources/cos.bmp");
+        System.out.println(deliveredMessage.size());
+        removesZeros();
+        FileOutputStream fo = new FileOutputStream("src/main/resources/wynik.bmp");
         System.out.println(deliveredMessage.size());
         fo.write(fromListToArray(deliveredMessage));
         fo.close();
@@ -191,5 +194,12 @@ public class Port implements AutoCloseable {
         messagePlusSum[messagePlusSum.length - 2] = checkSum[0];
         messagePlusSum[messagePlusSum.length - 1] = checkSum[1];
         return messagePlusSum;
+    }
+
+    private void removesZeros() {
+        int zeros = deliveredMessage.remove(deliveredMessage.size() - 1);
+        for (int i = 0; i < zeros; i++) {
+            deliveredMessage.remove(deliveredMessage.size() - 1);
+        }
     }
 }

@@ -17,13 +17,13 @@ public class Data {
             converted[i / 128][i % 128] = bytes[i];
         }
         int counter = bytes.length % 128;
-        for (int i = 0; i < converted[converted.length - 1].length - (bytes.length % 128); i++) {
+        int amountOfZeros = 128 - counter - 1;
+        for (int i = 0; i < amountOfZeros; i++) {
             converted[converted.length - 1][counter] = 0;
             counter++;
         }
-        System.out.println(converted.length);
+        converted[converted.length - 1][127] = (byte) amountOfZeros;
         return converted;
-
     }
 
     public static byte[] countCheckSum(byte[] bytes) {
