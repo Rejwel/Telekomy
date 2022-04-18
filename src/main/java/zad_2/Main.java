@@ -4,14 +4,16 @@ import java.io.FileInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Base64;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         Scanner s = new Scanner(System.in);
 
-        InputStream inputStream = new FileInputStream("src/main/resources/cos.bmp");
+        InputStream inputStream = new FileInputStream("src/main/resources/dupa.bmp");
         byte[] bytes = inputStream.readAllBytes();
+        byte[] coded = Base64.getEncoder().encode(bytes);
         System.out.println(bytes.length);
         int kindOfPort;
         while (true) {
@@ -34,7 +36,7 @@ public class Main {
         System.out.print("Wybór: ");
         try {
             if (kindOfPort == 1) {
-                PortManager.getPort(s.nextInt(), Data.divideBytesToMax128Byte(bytes));
+                PortManager.getPort(s.nextInt(), Data.divideBytesToMax128Byte(coded));
             } else {
                 PortManager.getPort(s.nextInt());
             }

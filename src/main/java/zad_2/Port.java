@@ -3,21 +3,22 @@ package zad_2;
 import com.fazecast.jSerialComm.SerialPort;
 
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class Port implements AutoCloseable {
     private final SerialPort port;
     private boolean lastMessageReaded = true;
     private byte[] lastMessage = {'0'};
     private byte[][] messageToSend;
-    private List<Byte> deliveredMessage = new ArrayList<>();
+
+    private byte[] deliveredBytes = new byte[0];
     private int numerOfBlockToSend = -1;
     private int counter = 0;
     private boolean shouldContinue = true;
@@ -31,7 +32,7 @@ public class Port implements AutoCloseable {
         whatToDoReceiverSwitch();
     }
 
-    public Port(SerialPort port, byte[][] messageToSend) throws InterruptedException {
+    public Port(SerialPort port, byte[][] messageToSend) throws InterruptedException, IOException {
         this.port = port;
         port.openPort();
         port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
@@ -64,8 +65,7 @@ public class Port implements AutoCloseable {
         }
     }
 
-    private void whatToDoSenderSwitch() throws InterruptedException {
-
+    private void whatToDoSenderSwitch() throws InterruptedException, IOException {
         while (true) {
             if (Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
                 System.out.println("dupa");
@@ -89,6 +89,7 @@ public class Port implements AutoCloseable {
 
                         if (Arrays.equals(lastMessage, new byte[]{'0', '2'})) {
                             port.writeBytes(lastSendMessage, lastSendMessage.length);
+                            System.out.println("zle");
                         }
 
                         if (Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
@@ -97,15 +98,22 @@ public class Port implements AutoCloseable {
                             byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]);
                             lastSendMessage = combine;
                             port.writeBytes(combine, combine.length);
+                            byte[] temp = messageWithoutCheckSum(combine);
+                            addByteToArray(temp);
                             counter++;
                         }
                     }
-                    Thread.sleep(20);
+                    Thread.sleep(100);
                 }
                 break;
             }
             Thread.sleep(1000);
         }
+        removesZeros();
+        FileOutputStream fo = new FileOutputStream("src/main/resources/wynikBezWysylania.bmp");
+        byte[] result = Base64.getDecoder().decode(deliveredBytes);
+        fo.write(result);
+        fo.close();
     }
 
     private void whatToDoReceiverSwitch() throws IOException, InterruptedException {
@@ -114,7 +122,6 @@ public class Port implements AutoCloseable {
             if (System.currentTimeMillis() - start > 5000) {
                 start = System.currentTimeMillis();
                 port.writeBytes(new byte[]{'9', '9'}, 2);
-                System.out.println(lastMessage);
             }
         }
 
@@ -136,9 +143,9 @@ public class Port implements AutoCloseable {
                 byte[] checkSumFromSender = new byte[2];
                 checkSumFromSender[0] = lastMessage[lastMessage.length - 2];
                 checkSumFromSender[1] = lastMessage[lastMessage.length - 1];
-                byte[] messageWithoutChecksum = messageWithoutCheckSum();
+                byte[] messageWithoutChecksum = messageWithoutCheckSum(lastMessage);
                 if (Arrays.equals(Data.countCheckSum(messageWithoutChecksum), checkSumFromSender)) {
-                    addByteToMessage(messageWithoutChecksum);
+                    addByteToArray(messageWithoutChecksum);
                     port.writeBytes(new byte[]{'1', '1'}, 2);
                     lastSendMessage = new byte[]{'1', '1'};
                 } else {
@@ -147,11 +154,10 @@ public class Port implements AutoCloseable {
                 }
             }
         }
-        System.out.println(deliveredMessage.size());
         removesZeros();
         FileOutputStream fo = new FileOutputStream("src/main/resources/wynik.bmp");
-        System.out.println(deliveredMessage.size());
-        fo.write(fromListToArray(deliveredMessage));
+        byte[] result = Base64.getDecoder().decode(deliveredBytes);
+        fo.write(result);
         fo.close();
     }
 
@@ -163,16 +169,23 @@ public class Port implements AutoCloseable {
         this.lastMessageReaded = lastMessageReaded;
     }
 
-    private void addByteToMessage(byte[] message) {
-        for (byte b : message) {
-            deliveredMessage.add(b);
+    private void addByteToArray(byte[] message) {
+        byte[] newTab = new byte[deliveredBytes.length + message.length];
+        for (int i = 0; i < deliveredBytes.length; i++) {
+            newTab[i] = deliveredBytes[i];
         }
+        int counter = 0;
+        for (int i = deliveredBytes.length; i < newTab.length; i++) {
+            newTab[i] = message[counter];
+            counter++;
+        }
+        deliveredBytes = newTab;
     }
 
-    private byte[] messageWithoutCheckSum() {
-        byte[] message = new byte[lastMessage.length - 2];
+    private byte[] messageWithoutCheckSum(byte[] combine) {
+        byte[] message = new byte[combine.length - 2];
         for (int i = 0; i < message.length; i++) {
-            message[i] = lastMessage[i];
+            message[i] = combine[i];
         }
         return message;
     }
@@ -197,9 +210,11 @@ public class Port implements AutoCloseable {
     }
 
     private void removesZeros() {
-        int zeros = deliveredMessage.remove(deliveredMessage.size() - 1);
-        for (int i = 0; i < zeros; i++) {
-            deliveredMessage.remove(deliveredMessage.size() - 1);
+        int zeros = deliveredBytes[deliveredBytes.length - 1];
+        byte[] result = new byte[deliveredBytes.length - zeros - 1];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = deliveredBytes[i];
         }
+        deliveredBytes = result;
     }
 }
