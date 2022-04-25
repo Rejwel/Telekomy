@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -15,14 +16,19 @@ import java.util.List;
 public class Port implements AutoCloseable {
     private final SerialPort port;
     private boolean lastMessageReaded = true;
-    private byte[] lastMessage = {'0'};
+    private byte[] lastMessage = {0};
     private byte[][] messageToSend;
+    private static List<Byte> deliveredMessage = new ArrayList<>();
+    private static List<Byte> finalDeliveredMessage = new ArrayList<>();
+    private static boolean nineNine = false;
+    private static boolean oneOne = false;
+    private static boolean two = false;
 
     private byte[] deliveredBytes = new byte[0];
     private int numerOfBlockToSend = -1;
     private int counter = 0;
-    private boolean shouldContinue = true;
     private byte[] lastSendMessage = new byte[2];
+    private boolean shouldContinue = true;
 
     public Port(SerialPort port) throws IOException, InterruptedException {
         this.port = port;
@@ -39,6 +45,46 @@ public class Port implements AutoCloseable {
         port.addDataListener(new SerialPortListenerSender(this));
         this.messageToSend = messageToSend;
         whatToDoSenderSwitch();
+    }
+
+    public static boolean isNineNine() {
+        return nineNine;
+    }
+
+    public static void setNineNine(boolean nineNine) {
+        Port.nineNine = nineNine;
+    }
+
+    public static boolean isOneOne() {
+        return oneOne;
+    }
+
+    public static void setOneOne(boolean oneOne) {
+        Port.oneOne = oneOne;
+    }
+
+    public static boolean isTwo() {
+        return two;
+    }
+
+    public static void setTwo(boolean two) {
+        Port.two = two;
+    }
+
+    public SerialPort getPort() {
+        return port;
+    }
+
+    public static List<Byte> getDeliveredMessage() {
+        return deliveredMessage;
+    }
+
+    public static void setToNewDeliveredMessage() {
+        deliveredMessage = new ArrayList<>();
+    }
+
+    public static List<Byte> getFinalDeliveredMessage() {
+        return finalDeliveredMessage;
     }
 
     public void close() {
@@ -58,107 +104,67 @@ public class Port implements AutoCloseable {
         return lastMessage;
     }
 
-    public void sendAConfirmConnectMessage() {
-        long start = 0;
-        while (true) {
-            port.writeBytes(new byte[]{'9', '9'}, 2);
-        }
-    }
-
     private void whatToDoSenderSwitch() throws InterruptedException, IOException {
         while (true) {
-            if (Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
-                System.out.println("dupa");
-                long start = System.currentTimeMillis();
-                while (!Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
-                    if (System.currentTimeMillis() - start > 2000) {
-                        start = System.currentTimeMillis();
-                        port.writeBytes(new byte[]{'9', '9'}, 2);
-                    }
-                }
-
+            if (nineNine) {
+                System.out.println("DUPA");
                 while (true) {
-                    if (!lastMessageReaded && (Arrays.equals(lastMessage, new byte[]{'0', '2'}) || Arrays.equals(lastMessage, new byte[]{'1', '1'}))) {
+                    if (two || oneOne || nineNine) {
                         lastMessageReaded = true;
 
-
-                        if (counter == messageToSend.length && Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
-                            port.writeBytes(new byte[]{'f', 'f'}, 2);
+                        if (counter == messageToSend.length && oneOne) {
+                            port.writeBytes(new byte[]{(byte) 0xff}, 1);
                             break;
                         }
 
-                        if (Arrays.equals(lastMessage, new byte[]{'0', '2'})) {
+                        if (two) {
                             port.writeBytes(lastSendMessage, lastSendMessage.length);
                             System.out.println("zle");
                         }
 
-                        if (Arrays.equals(lastMessage, new byte[]{'1', '1'})) {
+                        if (oneOne || nineNine) {
                             numerOfBlockToSend++;
                             System.out.println(numerOfBlockToSend);
                             byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]);
                             lastSendMessage = combine;
                             port.writeBytes(combine, combine.length);
-                            byte[] temp = messageWithoutCheckSum(combine);
-                            addByteToArray(temp);
                             counter++;
                         }
                     }
-                    Thread.sleep(100);
+                    oneOne = false;
+                    two = false;
+                    nineNine = false;
+                    Thread.sleep(1);
                 }
                 break;
             }
-            Thread.sleep(1000);
+            Thread.sleep(1);
         }
-        removesZeros();
-        FileOutputStream fo = new FileOutputStream("src/main/resources/wynikBezWysylania.bmp");
-        byte[] result = Base64.getDecoder().decode(deliveredBytes);
-        fo.write(result);
-        fo.close();
     }
 
     private void whatToDoReceiverSwitch() throws IOException, InterruptedException {
-        long start = System.currentTimeMillis();
-        while (!Arrays.equals(lastMessage, new byte[]{'9', '9'})) {
-            if (System.currentTimeMillis() - start > 5000) {
-                start = System.currentTimeMillis();
-                port.writeBytes(new byte[]{'9', '9'}, 2);
-            }
+        port.writeBytes(new byte[]{99}, 1);
+
+        SerialPortListenerReceiver.setCanContinue(false);
+        while (shouldContinue) {
+
         }
+    }
 
-        port.writeBytes(new byte[]{'1', '1'}, 2);
-        lastSendMessage = new byte[]{'1', '1'};
+    public void send11Message() {
+        port.writeBytes(new byte[]{11}, 1);
+    }
 
-
-        while (true) {
-            if (System.currentTimeMillis() - start > 500) {
-                port.writeBytes(lastSendMessage, 2);
-                start = System.currentTimeMillis();
-            }
-            if (Arrays.equals(lastMessage, new byte[]{'f', 'f'})) {
-                break;
-            }
-            if (!lastMessageReaded && lastMessage.length > 128) {
-                lastMessageReaded = true;
-                start = System.currentTimeMillis();
-                byte[] checkSumFromSender = new byte[2];
-                checkSumFromSender[0] = lastMessage[lastMessage.length - 2];
-                checkSumFromSender[1] = lastMessage[lastMessage.length - 1];
-                byte[] messageWithoutChecksum = messageWithoutCheckSum(lastMessage);
-                if (Arrays.equals(Data.countCheckSum(messageWithoutChecksum), checkSumFromSender)) {
-                    addByteToArray(messageWithoutChecksum);
-                    port.writeBytes(new byte[]{'1', '1'}, 2);
-                    lastSendMessage = new byte[]{'1', '1'};
-                } else {
-                    port.writeBytes(new byte[]{'0', '2'}, 2);
-                    lastSendMessage = new byte[]{'0', '2'};
-                }
-            }
-        }
-        removesZeros();
+    public static void saveMessage() throws IOException {
         FileOutputStream fo = new FileOutputStream("src/main/resources/wynik.bmp");
-        byte[] result = Base64.getDecoder().decode(deliveredBytes);
+        byte[] temp = new byte[finalDeliveredMessage.size()];
+        for (int i = 0; i < temp.length; i++) {
+            temp[i] = finalDeliveredMessage.get(i);
+        }
+        byte[] result = Base64.getDecoder().decode(temp);
         fo.write(result);
         fo.close();
+        System.out.println("Wyslane");
     }
 
     public boolean isLastMessageReaded() {
@@ -217,4 +223,22 @@ public class Port implements AutoCloseable {
         }
         deliveredBytes = result;
     }
+
+    public static void removesZerosFromList(List<Byte> list) {
+        int zeros = list.get(list.size() - 1);
+        List<Byte> result = new ArrayList<>(list);
+        int amountOfSubList = list.size() - zeros - 1;
+        finalDeliveredMessage = result.subList(0, amountOfSubList);
+    }
+
+    public static List<Byte> removeCheckSum(List<Byte> list) {
+        List<Byte> result = new ArrayList<>(list);
+        return result.subList(0, list.size() - 2);
+    }
+
+    public static void addToFinalList(List<Byte> list) {
+        finalDeliveredMessage.addAll(list);
+    }
+
+
 }
