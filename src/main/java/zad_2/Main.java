@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Scanner s = new Scanner(System.in);
 
-        InputStream inputStream = new FileInputStream("src/main/resources/plik.txt");
+        InputStream inputStream = new FileInputStream("src/main/resources/cos.bmp");
         byte[] bytes = inputStream.readAllBytes();
         byte[] coded = Base64.getEncoder().encode(bytes);
         System.out.println(bytes.length);

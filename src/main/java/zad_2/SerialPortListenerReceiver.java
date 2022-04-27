@@ -33,14 +33,16 @@ public class SerialPortListenerReceiver implements SerialPortDataListener {
     @Override
     public void serialEvent(SerialPortEvent serialPortEvent) {
         byte[] receivedData = serialPortEvent.getReceivedData();
-        if (Arrays.equals(receivedData, new byte[]{(byte) 0xff})) {
-            System.out.println("koniec");
-            Port.removesZerosFromList(Port.getFinalDeliveredMessage());
-            try {
-                System.out.println("koniec2");
-                Port.saveMessage();
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (Port.getDeliveredMessage().size() == 0) {
+            if (Arrays.equals(receivedData, new byte[]{(byte) 0xff})) {
+                System.out.println("koniec");
+                Port.removesZerosFromList(Port.getFinalDeliveredMessage());
+                try {
+                    System.out.println("koniec2");
+                    Port.saveMessage();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         for (byte receivedDatum : receivedData) {

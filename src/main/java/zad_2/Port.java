@@ -156,7 +156,7 @@ public class Port implements AutoCloseable {
     }
 
     public static void saveMessage() throws IOException {
-        FileOutputStream fo = new FileOutputStream("src/main/resources/wynikTekst.txt");
+        FileOutputStream fo = new FileOutputStream("src/main/resources/wynik.bmp");
         byte[] temp = new byte[finalDeliveredMessage.size()];
         for (int i = 0; i < temp.length; i++) {
             temp[i] = finalDeliveredMessage.get(i);
