@@ -22,18 +22,18 @@ public class SerialPortListenerSender implements SerialPortDataListener {
     @Override
     public void serialEvent(SerialPortEvent serialPortEvent) {
         System.out.println("dostalem");
-        byte[] receivedData = serialPortEvent.getReceivedData();
+        byte[] receivedData = serialPortEvent.getReceivedData(); //czytanie danych odebranych
         if (Arrays.equals(receivedData, new byte[]{99})) {
             System.out.println("99");
-            Port.setNineNine(true);
+            Port.setNineNine(true); //ustawienie zmiennej;
         }
         if (Arrays.equals(receivedData, new byte[]{11})) {
             System.out.println("11");
-            Port.setOneOne(true);
+            Port.setOneOne(true); //ustawienie zmiennej;
         }
         if (Arrays.equals(receivedData, new byte[]{02})) {
             System.out.println("02");
-            Port.setTwo(true);
+            Port.setTwo(true); //ustawienie zmiennej;
         }
     }
 

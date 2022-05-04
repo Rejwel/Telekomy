@@ -107,27 +107,26 @@ public class Port implements AutoCloseable {
     private void whatToDoSenderSwitch() throws InterruptedException, IOException {
         while (true) {
             if (nineNine) {
-                System.out.println("DUPA");
                 while (true) {
                     if (two || oneOne || nineNine) {
                         lastMessageReaded = true;
 
                         if (counter == messageToSend.length && oneOne) {
-                            port.writeBytes(new byte[]{(byte) 0xff}, 1);
+                            port.writeBytes(new byte[]{(byte) 0xff}, 1); //wszystko wyslane, zakoncz program
                             break;
                         }
 
                         if (two) {
-                            port.writeBytes(lastSendMessage, lastSendMessage.length);
+                            port.writeBytes(lastSendMessage, lastSendMessage.length); //ponownie wyslji wiadomosc
                             System.out.println("zle");
                         }
 
                         if (oneOne || nineNine) {
                             numerOfBlockToSend++;
                             System.out.println(numerOfBlockToSend);
-                            byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]);
-                            lastSendMessage = combine;
-                            port.writeBytes(combine, combine.length);
+                            byte[] combine = messagePlusCheckSum(messageToSend[numerOfBlockToSend]); //tworzenie wiadomosci i laczenie go z checksuma;
+                            lastSendMessage = combine; //przypisanie do wartosci
+                            port.writeBytes(combine, combine.length); //wyslji wiadomosc
                             counter++;
                         }
                     }
@@ -143,7 +142,7 @@ public class Port implements AutoCloseable {
     }
 
     private void whatToDoReceiverSwitch() throws IOException, InterruptedException {
-        port.writeBytes(new byte[]{99}, 1);
+        port.writeBytes(new byte[]{99}, 1); //wyslij wiadomosc inicjujaca;
 
         SerialPortListenerReceiver.setCanContinue(false);
         while (shouldContinue) {
@@ -155,7 +154,7 @@ public class Port implements AutoCloseable {
         port.writeBytes(new byte[]{11}, 1);
     }
 
-    public static void saveMessage() throws IOException {
+    public static void saveMessage() throws IOException { //zapisz wiadomosc do pliku
         FileOutputStream fo = new FileOutputStream("src/main/resources/wynik.bmp");
         byte[] temp = new byte[finalDeliveredMessage.size()];
         for (int i = 0; i < temp.length; i++) {
