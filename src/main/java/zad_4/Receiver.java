@@ -22,28 +22,18 @@ public class Receiver {
     }
 
     public void receivedData() throws IOException, LineUnavailableException {
-        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 2, 4, 44100, false);
+        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 1, 4, 44100, false);
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
         SourceDataLine sourceLine = (SourceDataLine) AudioSystem.getLine(info);
         sourceLine.open();
-        Thread monitorThread = new Thread() {
-            @Override
-            public void run() {
-                sourceLine.start();
-
-                while (true) {
-                    sourceLine.write(bytes, 0, 4);
-                }
-            }
-        };
-        monitorThread.start();
+        sourceLine.start();
         InputStream socketIn = socket.getInputStream();
-        while(true){
+        while (true) {
             bytes = new byte[4];
-            for (int i =0; i < 4; i++) {
+            for (int i = 0; i < 4; i++) {
                 bytes[i] = (byte) socketIn.read();
             }
-
+            sourceLine.write(bytes, 0, 4);
         }
     }
 }
