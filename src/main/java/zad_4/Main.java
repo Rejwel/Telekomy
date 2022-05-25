@@ -12,11 +12,10 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws IOException, LineUnavailableException {
-        String word = "dupa";
+
         Sender sender = new Sender();
-        sender.sendBytes(word.getBytes());
 //        Receiver receiver = new Receiver("169.254.59.39");
-        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 2, 4, 44100, false);
+        AudioFormat format = new AudioFormat(22000, 8, 1, true, false);
         DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
         TargetDataLine targetLine = (TargetDataLine) AudioSystem.getLine(info);
         targetLine.open();
@@ -40,7 +39,6 @@ public class Main {
         };
         monitorThread.start();
     }
-
 
 
 }

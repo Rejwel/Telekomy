@@ -22,7 +22,7 @@ public class Receiver {
     }
 
     public void receivedData() throws IOException, LineUnavailableException {
-        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 1, 4, 44100, false);
+        AudioFormat format = new AudioFormat(22000, 8, 1,  true, false);
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
         SourceDataLine sourceLine = (SourceDataLine) AudioSystem.getLine(info);
         sourceLine.open();
