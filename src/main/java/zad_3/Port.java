@@ -92,7 +92,7 @@ public class Port implements AutoCloseable {
         while (true) {
             if (nineNine) {
                 port.writeBytes(messageToSend, messageToSend.length); //wyslji wiadomosc
-                Thread.sleep(1000);
+                Thread.sleep(2000);
                 port.writeBytes(new byte[]{0x16}, 1);
                 break;
             }
