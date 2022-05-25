@@ -42,6 +42,8 @@ public class Main {
                 monitorThread.start();
                 break;
             case 2:
+                scanner.nextLine();
+                System.out.println("Podaj adres");
                 String address = scanner.nextLine();
                 Receiver receiver = new Receiver(address, value);
                 break;
