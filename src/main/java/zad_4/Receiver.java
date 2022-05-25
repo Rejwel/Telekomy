@@ -13,6 +13,7 @@ public class Receiver {
             while (socket == null) {
                 socket = new Socket(address, 5000);
             }
+            receivedData();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -21,10 +22,11 @@ public class Receiver {
     public void receivedData() throws IOException {
         InputStream socketIn = socket.getInputStream();
         while(true){
-            byte[] bytes = socketIn.readAllBytes();
-            if(bytes.length != 0) {
-                System.out.println(Arrays.toString(bytes));
+            byte[] bytes = new byte[4];
+            for (int i =0; i < 4; i++) {
+                bytes[i] = (byte) socketIn.read();
             }
+            System.out.println(Arrays.toString(bytes));
         }
     }
 }

@@ -15,7 +15,7 @@ public class Main {
 //        Sender sender = new Sender();
 //        sender.sendBytes(word.getBytes());
         Receiver receiver = new Receiver("169.254.59.39");
-        receiver.receivedData();
+
 
     }
 
