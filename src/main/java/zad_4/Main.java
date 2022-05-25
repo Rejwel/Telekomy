@@ -2,43 +2,50 @@ package zad_4;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) throws IOException, LineUnavailableException {
+        Scanner scanner = new Scanner(System.in);
+        int value;
+        int choice;
+        System.out.println("Czestotliwosc: ");
+        value = scanner.nextInt();
+        System.out.println("1.Nadajnik");
+        System.out.println("2.Odbiornik");
+        choice = scanner.nextInt();
+        switch (choice) {
+            case 1:
+                Sender sender = new Sender();
+                AudioFormat format = new AudioFormat(value, 8, 1, true, false);
+                DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+                TargetDataLine targetLine = (TargetDataLine) AudioSystem.getLine(info);
+                targetLine.open();
+                Thread monitorThread = new Thread() {
+                    @Override
+                    public void run() {
+                        targetLine.start();
 
-        Sender sender = new Sender();
-//        Receiver receiver = new Receiver("169.254.59.39");
-        AudioFormat format = new AudioFormat(22000, 8, 1, true, false);
-        DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
-        TargetDataLine targetLine = (TargetDataLine) AudioSystem.getLine(info);
-        targetLine.open();
-        Thread monitorThread = new Thread() {
-            @Override
-            public void run() {
-                targetLine.start();
+                        byte[] data = new byte[targetLine.getBufferSize() / 5];
+                        System.out.println(targetLine.getBufferSize());
 
-                byte[] data = new byte[targetLine.getBufferSize() / 5];
-                System.out.println(targetLine.getBufferSize());
-
-                while (true) {
-                    targetLine.read(data, 0, data.length);
-                    try {
-                        sender.sendBytes(data);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        while (true) {
+                            targetLine.read(data, 0, data.length);
+                            try {
+                                sender.sendBytes(data);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
-                }
-            }
-        };
-        monitorThread.start();
+                };
+                monitorThread.start();
+                break;
+            case 2:
+                String address = scanner.nextLine();
+                Receiver receiver = new Receiver(address, value);
+                break;
+            default:
+        }
     }
-
-
 }
