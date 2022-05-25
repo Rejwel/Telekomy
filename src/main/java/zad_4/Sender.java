@@ -11,7 +11,7 @@ public class Sender {
 
     public Sender() {
         try {
-            serverSocket = new ServerSocket(1234);
+            serverSocket = new ServerSocket(5000);
             socket = serverSocket.accept();
         } catch (IOException e) {
             e.printStackTrace();

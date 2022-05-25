@@ -8,16 +8,18 @@ import java.io.OutputStream;
 public class Audio {
     private AudioFormat audioFormat;
     private static TargetDataLine targetDataLine;
-    private OutputStream outputStream;
+    private static OutputStream outputStream;
 
 
     public static void main(String[] args) throws InterruptedException {
         Audio audio = new Audio();
-        audio.captureAudio();
-        Thread.sleep(5000);
-        targetDataLine.stop();
-        targetDataLine.close();
-        playRecord();
+//        audio.captureAudio();
+//        Thread.sleep(5000);
+//        targetDataLine.stop();
+//        targetDataLine.close();
+//        playRecord();
+        audio.initForLiveMonitor();
+
     }
 
     public static void playRecord() {
@@ -42,6 +44,7 @@ public class Audio {
                 targetDataLine.open(audioFormat);
                 targetDataLine.start();
                 AudioSystem.write(new AudioInputStream(targetDataLine), fileType, audioFile);
+                AudioSystem.write(new AudioInputStream(targetDataLine), fileType, outputStream);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -62,5 +65,53 @@ public class Audio {
             System.out.println("error");
             System.exit(0);
         }
+    }
+
+    private void initForLiveMonitor() {
+
+        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 44100, 16, 2, 4, 44100, false);
+
+        try {
+
+            //Speaker
+            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
+            SourceDataLine sourceLine = (SourceDataLine) AudioSystem.getLine(info);
+            sourceLine.open();
+
+            //Microphone
+            info = new DataLine.Info(TargetDataLine.class, format);
+            TargetDataLine targetLine = (TargetDataLine) AudioSystem.getLine(info);
+            targetLine.open();
+
+            Thread monitorThread = new Thread() {
+                @Override
+                public void run() {
+                    targetLine.start();
+                    sourceLine.start();
+
+                    byte[] data = new byte[targetLine.getBufferSize() / 5];
+                    System.out.println(targetLine.getBufferSize());
+                    int readBytes;
+
+                    while (true) {
+                        readBytes = targetLine.read(data, 0, data.length);
+                        sourceLine.write(data, 0, readBytes);
+                    }
+                }
+            };
+
+            System.out.println( "Start LIVE Monitor for 15 seconds" );
+            monitorThread.start();
+
+            Thread.sleep(15000);
+            targetLine.stop();
+            targetLine.close();
+            System.out.println( "End LIVE Monitor" );
+
+        }
+        catch(LineUnavailableException lue) { lue.printStackTrace(); }
+        catch(InterruptedException ie) { ie.printStackTrace(); }
+
+
     }
 }

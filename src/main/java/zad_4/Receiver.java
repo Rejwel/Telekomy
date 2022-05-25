@@ -10,7 +10,9 @@ public class Receiver {
 
     public Receiver(String address) {
         try {
-            socket = new Socket(address, 5000);
+            while (socket == null) {
+                socket = new Socket(address, 5000);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
