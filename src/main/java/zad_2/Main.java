@@ -14,7 +14,6 @@ public class Main {
         InputStream inputStream = new FileInputStream("src/main/resources/cos.bmp");
         byte[] bytes = inputStream.readAllBytes();
         byte[] coded = Base64.getEncoder().encode(bytes);
-        String tryb = "crc";
         System.out.println(bytes.length);
         int kindOfPort;
         while (true) {
